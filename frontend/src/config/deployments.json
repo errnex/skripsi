@@ -1,0 +1,30 @@
+{
+  "sepolia": {
+    "chainId": 11155111,
+    "address": "0xCabAa39d88E4faf064C7c21F8673b757Fd93CBA6",
+    "deployBlock": 11870348,
+    "arbiter": "0xd5dAd53E26729C2bc114b1E341308072D5E5ff69",
+    "demoMode": true,
+    "dayLength": 60,
+    "reviewPeriod": 180,
+    "revisionWindow": 180,
+    "disputeTimeout": 420,
+    "deployer": "0x2136627762D3dF12d1c44e4b116999532A648Ada",
+    "txHash": "0x030b37faea7e4380ff6ea6d6e418711a43dc8fb75730b43d4945d795158118fc",
+    "deployedAt": "2026-10-08T13:05:47.812Z"
+  },
+  "localhost": {
+    "chainId": 31337,
+    "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "deployBlock": 1,
+    "arbiter": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+    "demoMode": true,
+    "dayLength": 60,
+    "reviewPeriod": 180,
+    "revisionWindow": 180,
+    "disputeTimeout": 420,
+    "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "txHash": "0x26a208d786cd54aa24c11165ab957ed87f84448395d3ac0b3b6e631498941129",
+    "deployedAt": "2026-10-08T10:38:06.179Z"
+  }
+}

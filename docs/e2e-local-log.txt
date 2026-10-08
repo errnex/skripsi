@@ -1,0 +1,52 @@
+LOG SKENARIO END-TO-END LOKAL (08 October 2026 16:30 WIB)
+Perintah: npx hardhat node  |  npm run deploy:local && npm run e2e:local
+
+
+   ✔ arbiter kontrak = akun Hardhat #3
+Kontrak 0x5FbDB2315678afecb367f032d93F642f64180aa3 | 1 hari = 60 detik | review 180s | arbiter 420s
+
+A. Jasa website, 3 milestone (0,3 / 0,5 / 0,2 ETH), denda 5%/hari, maks 50%, batas akhir 7 hari
+   ✔ pesanan #3 berstatus Funded
+   ✔ M1 tepat waktu: freelancer menerima 0,3 ETH
+   ✔ M2 terlambat 2 hari 3 jam -> d = 3, denda 0,075 ETH
+   ✔ revisi tidak menambah denda
+   ✔ M2 disetujui: freelancer menerima 0,425 ETH
+   ✔ M2 disetujui: klien menerima denda 0,075 ETH
+   ✔ M3 ditolak -> Disputed (tanpa refund otomatis)
+   ✔ arbiter 70%: klien menerima 0,14 ETH
+   ✔ arbiter 70%: freelancer menerima 0,06 ETH
+   ✔ arbiter tidak menerima dana (hanya membayar gas)
+   ✔ pesanan #3 Completed
+
+B. Jasa artikel, 6 bab x 0,1 ETH; bab 1 dicairkan otomatis setelah masa review, bab 2 tidak dikirim -> refund
+   ✔ bab 1: finalizeAfterReview mencairkan 0,1 ETH
+   ✔ bab 2-6 (0,5 ETH) dikembalikan ke klien
+   ✔ pesanan #4 Terminated
+
+C. Sengketa tanpa keputusan arbiter -> settleDisputeTimeout (50:50)
+   ✔ dibagi 50:50: klien 0,1 ETH, freelancer 0,1 ETH
+
+D. Pembatalan sebelum freelancer menerima
+   ✔ cancelOrder: 0,3 ETH kembali penuh ke klien
+
+Saldo kontrak setelah semua skenario: 0.0 ETH
+
+Gas terpakai per fungsi (jaringan lokal):
+Fungsi                           n        min        max  rata-rata
+createOrder (3 milestone)        1     311628     311628     311628
+acceptOrder                      3      42464      42464      42464
+submitWork (pertama)             5      87672     110749      92321
+approveMilestone                 2      68218      75164      71691
+requestRevision                  1      62598      62598      62598
+submitWork (revisi)              1      52975      52975      52975
+rejectMilestone                  2      84178      84238      84208
+submitEvidence                   2      42257      61563      51910
+resolveDispute                   1      99032      99032      99032
+createOrder (6 milestone)        1     455163     455163     455163
+finalizeAfterReview              1      67950      67950      67950
+claimRefund                      1     172316     172316     172316
+createOrder (1 milestone)        2     215826     215826     215826
+settleDisputeTimeout             1      72614      72614      72614
+cancelOrder                      1      44349      44349      44349
+
+SEMUA 17 PEMERIKSAAN LULUS ✔

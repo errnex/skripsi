@@ -1,0 +1,31 @@
+{
+  "name": "freelance-escrow-frontend",
+  "version": "1.0.0",
+  "description": "dApp Sistem Pembayaran Jasa Freelance (React + Vite + ethers v6)",
+  "scripts": {
+    "dev": "vite",
+    "dev:local": "vite --mode localnet",
+    "build": "vite build",
+    "build:local": "vite build --mode localnet",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "ethers": "^6.17.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-router-dom": "^7.18.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.2",
+    "vite": "^8.3.3",
+    "vitest": "^5.0.3"
+  },
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.19"
+  }
+}

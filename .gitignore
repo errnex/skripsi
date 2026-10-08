@@ -1,0 +1,24 @@
+# dependensi
+node_modules/
+
+# hasil build / kompilasi
+contracts/artifacts/
+contracts/cache/
+contracts/typechain-types/
+contracts/coverage/
+contracts/coverage.json
+frontend/dist/
+
+# RAHASIA - jangan pernah di-commit
+.env
+.env.local
+.env.*.local
+*.pem
+secrets/
+
+# lain-lain
+.DS_Store
+Thumbs.db
+*.log
+.vscode/*
+!.vscode/extensions.json

@@ -1,0 +1,64 @@
+LAPORAN GAS - FreelanceEscrow (hardhat-gas-reporter)
+====================================================
+Sumber   : uji unit Hardhat (cd contracts && npm run test:gas), 08 October 2026 16:30 WIB
+Compiler : solc 0.8.28, optimizer aktif (200 runs), evm cancun
+Catatan  : angka = gasUsed (satuan gas), tidak bergantung harga gas. Biaya ETH = gasUsed x harga gas efektif.
+           Contoh: 3.409.656 gas x 2 gwei = 0,0068 ETH; x 10 gwei = 0,034 ETH.
+           Variasi min/max createOrder dipengaruhi jumlah milestone (1-6 milestone dalam pengujian) dan panjang CID.
+           Variasi submitWork: kiriman pertama (menghitung & menyimpan denda) lebih mahal daripada kiriman revisi.
+           Untuk Bab IV, ukur ulang di Sepolia dari transaction receipt (gasUsed, effectiveGasPrice) sesuai subbab 3.5.2.
+
+·--------------------------------------------|---------------------------|-------------|-------------------------------·
+|            Solc version: 0.8.28            ·  Optimizer enabled: true  ·  Runs: 200  ·  Block limit: 60,000,000 gas  │
+·············································|···························|·············|································
+|  Methods                                                                                                             │
+····················|························|·············|·············|·············|················|···············
+|  Contract         ·  Method                ·  Min        ·  Max        ·  Avg        ·  # calls       ·  usd (avg)   │
+····················|························|·············|·············|·············|················|···············
+|  FreelanceEscrow  ·  acceptOrder           ·          -  ·          -  ·     42,464  ·            22  ·           -  │
+····················|························|·············|·············|·············|················|···············
+|  FreelanceEscrow  ·  approveMilestone      ·     61,869  ·     75,164  ·     69,545  ·            28  ·           -  │
+····················|························|·············|·············|·············|················|···············
+|  FreelanceEscrow  ·  cancelOrder           ·          -  ·          -  ·     44,349  ·             6  ·           -  │
+····················|························|·············|·············|·············|················|···············
+|  FreelanceEscrow  ·  claimRefund           ·          -  ·          -  ·     97,607  ·             5  ·           -  │
+····················|························|·············|·············|·············|················|···············
+|  FreelanceEscrow  ·  createOrder           ·    261,184  ·    472,371  ·    364,624  ·            27  ·           -  │
+····················|························|·············|·············|·············|················|···············
+|  FreelanceEscrow  ·  finalizeAfterReview   ·     71,023  ·     77,396  ·     74,665  ·             7  ·           -  │
+····················|························|·············|·············|·············|················|···············
+|  FreelanceEscrow  ·  rejectMilestone       ·     84,118  ·     84,190  ·     84,156  ·            12  ·           -  │
+····················|························|·············|·············|·············|················|···············
+|  FreelanceEscrow  ·  requestRevision       ·     45,378  ·     62,478  ·     60,025  ·             7  ·           -  │
+····················|························|·············|·············|·············|················|···············
+|  FreelanceEscrow  ·  resolveDispute        ·     95,815  ·    105,345  ·    101,357  ·             8  ·           -  │
+····················|························|·············|·············|·············|················|···············
+|  FreelanceEscrow  ·  settleDisputeTimeout  ·     78,987  ·     79,121  ·     79,064  ·             7  ·           -  │
+····················|························|·············|·············|·············|················|···············
+|  FreelanceEscrow  ·  submitEvidence        ·     42,209  ·     61,515  ·     55,080  ·             3  ·           -  │
+····················|························|·············|·············|·············|················|···············
+|  FreelanceEscrow  ·  submitWork            ·     52,819  ·    110,793  ·     89,259  ·            50  ·           -  │
+····················|························|·············|·············|·············|················|···············
+|  Deployments                               ·                                         ·  % of limit    ·              │
+·············································|·············|·············|·············|················|···············
+|  FreelanceEscrow                           ·  3,409,574  ·  3,409,658  ·  3,409,656  ·         5.7 %  ·           -  │
+·--------------------------------------------|-------------|-------------|-------------|----------------|--------------·
+Gas per skenario end-to-end di jaringan lokal (contracts/scripts/e2e-local.ts):
+Gas terpakai per fungsi (jaringan lokal):
+Fungsi                           n        min        max  rata-rata
+createOrder (3 milestone)        1     311628     311628     311628
+acceptOrder                      3      42464      42464      42464
+submitWork (pertama)             5      87672     110749      92321
+approveMilestone                 2      68218      75164      71691
+requestRevision                  1      62598      62598      62598
+submitWork (revisi)              1      52975      52975      52975
+rejectMilestone                  2      84178      84238      84208
+submitEvidence                   2      42257      61563      51910
+resolveDispute                   1      99032      99032      99032
+createOrder (6 milestone)        1     455163     455163     455163
+finalizeAfterReview              1      67950      67950      67950
+claimRefund                      1     172316     172316     172316
+createOrder (1 milestone)        2     215826     215826     215826
+settleDisputeTimeout             1      72614      72614      72614
+cancelOrder                      1      44349      44349      44349
+

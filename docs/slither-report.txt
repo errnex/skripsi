@@ -1,0 +1,190 @@
+LAPORAN ANALISIS KEAMANAN SLITHER - FreelanceEscrow.sol
+=======================================================
+Alat     : Slither v0.11.6 (crytic), solc 0.8.28, optimizer 200 runs, evm cancun
+Perintah : cd contracts && slither . --filter-paths "node_modules|contracts/test"
+Tanggal  : 08 October 2026 16:14 WIB
+Cakupan  : contracts/FreelanceEscrow.sol (dependensi OpenZeppelin dan kontrak uji ReentrancyAttacker dikecualikan)
+
+RINGKASAN
+---------
+                      Sebelum perbaikan   Sesudah perbaikan
+  High                       0                   0
+  Medium                     1                   0
+  Low                       11                  11
+  Informational              5                   5
+
+ANALISIS TEMUAN
+---------------
+1. [Medium] divide-before-multiply pada _lateFeeAt()  -> DIPERBAIKI (sebenarnya false positive)
+   Rumus denda proposal (subbab 3.4.7) memang SENGAJA membulatkan hari terlambat ke atas
+   lebih dulu, baru dikalikan tarif: d = ceil(selisih / 86.400); denda = V x min(d x r, c) / 10.000.
+   Jadi pembagian sebelum perkalian adalah bagian dari aturan bisnis, bukan kehilangan presisi.
+   Agar maksudnya eksplisit, pembulatan dipindah ke OpenZeppelin Math.ceilDiv(). Hasil hitung
+   tidak berubah (semua uji BB-07, BB-08, BB-09 tetap lulus) dan temuan Medium hilang.
+
+2. [Low] timestamp (11 temuan) -> DITERIMA, dijustifikasi
+   Tenggat, denda, masa review, jendela revisi, batas akhir refund, dan tenggat arbiter memang
+   bergantung pada block.timestamp (sesuai rancangan). Validator hanya dapat menggeser timestamp
+   beberapa detik, sedangkan granularitas denda dan periode waktu adalah HARI, sehingga pergeseran
+   tersebut tidak mengubah hasil secara berarti. Sebagian temuan juga tidak terkait waktu sama sekali
+   (mis. "milestoneId < milestones.length"); Slither menandainya karena fungsi yang sama memakai timestamp.
+
+3. [Informational] low-level-calls pada _send() -> DITERIMA
+   Pengiriman ETH memakai call{value: ...}("") sesuai rekomendasi terkini (transfer/send dibatasi 2300 gas).
+   Risiko re-entrancy ditangani dengan nonReentrant (OpenZeppelin ReentrancyGuard) dan pola
+   checks-effects-interactions: status milestone diubah SEBELUM ETH dikirim. Diuji pada test
+   "re-entrancy: freelancer jahat tidak bisa mencairkan milestone dua kali".
+
+4. [Informational] naming-convention (4 temuan) -> DITERIMA
+   DAY_LENGTH, REVIEW_PERIOD, REVISION_WINDOW, DISPUTE_TIMEOUT ditulis huruf besar agar sama dengan
+   diagram class (Gambar 3.9). Di proposal ketiganya «constant»; di implementasi dijadikan «immutable»
+   (diisi lewat constructor) supaya bisa memakai periode singkat saat demo.
+
+Kesimpulan: tidak ada temuan High maupun Medium yang tersisa.
+
+=====================================================================
+KELUARAN LENGKAP - SEBELUM PERBAIKAN
+=====================================================================
+INFO:Detectors:
+Detector: divide-before-multiply
+FreelanceEscrow._lateFeeAt(uint256,FreelanceEscrow.Milestone,uint256) (contracts/FreelanceEscrow.sol#535-542) performs a multiplication on the result of a division:
+	- daysLate = (t - m.deadline + DAY_LENGTH - 1) / DAY_LENGTH (contracts/FreelanceEscrow.sol#538)
+	- pct = daysLate * o.dailyRateBps (contracts/FreelanceEscrow.sol#539)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#divide-before-multiply
+INFO:Detectors:
+Detector: timestamp
+FreelanceEscrow.submitWork(uint256,uint256,string) (contracts/FreelanceEscrow.sol#295-318) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(m.status == MilestoneStatus.Pending || m.status == MilestoneStatus.RevisionRequested,Milestone tidak menunggu kiriman) (contracts/FreelanceEscrow.sol#302-305)
+FreelanceEscrow.requestRevision(uint256,uint256,string) (contracts/FreelanceEscrow.sol#333-348) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(m.status == MilestoneStatus.Submitted,Milestone belum dikirim) (contracts/FreelanceEscrow.sol#340)
+	- require(bool,string)(m.revisionCount < o.maxRevisions,Batas revisi tercapai) (contracts/FreelanceEscrow.sol#341)
+FreelanceEscrow.rejectMilestone(uint256,uint256,string) (contracts/FreelanceEscrow.sol#354-375) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(block.timestamp > uint256(m.revisionRequestedAt) + REVISION_WINDOW,Jendela revisi belum habis) (contracts/FreelanceEscrow.sol#362-365)
+	- require(bool,string)(m.status == MilestoneStatus.Submitted,Milestone belum dikirim) (contracts/FreelanceEscrow.sol#367)
+FreelanceEscrow.finalizeAfterReview(uint256,uint256) (contracts/FreelanceEscrow.sol#378-388) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(block.timestamp > uint256(m.lastSubmittedAt) + REVIEW_PERIOD,Masa review belum berakhir) (contracts/FreelanceEscrow.sol#386)
+FreelanceEscrow.claimRefund(uint256) (contracts/FreelanceEscrow.sol#394-414) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(m.status == MilestoneStatus.Pending,Hasil kerja sudah dikirim) (contracts/FreelanceEscrow.sol#399)
+	- require(bool,string)(block.timestamp > uint256(m.deadline) + o.gracePeriod,Belum melewati tenggat + batas akhir) (contracts/FreelanceEscrow.sol#400)
+FreelanceEscrow.resolveDispute(uint256,uint256,uint256,string) (contracts/FreelanceEscrow.sol#445-459) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(block.timestamp <= uint256(m.disputeStartedAt) + DISPUTE_TIMEOUT,Tenggat arbiter sudah lewat) (contracts/FreelanceEscrow.sol#453)
+FreelanceEscrow.settleDisputeTimeout(uint256,uint256) (contracts/FreelanceEscrow.sol#462-470) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(block.timestamp > uint256(m.disputeStartedAt) + DISPUTE_TIMEOUT,Tenggat arbiter belum lewat) (contracts/FreelanceEscrow.sol#467)
+FreelanceEscrow.calculateLateFee(uint256,uint256) (contracts/FreelanceEscrow.sol#480-491) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(milestoneId < milestones[orderId].length,Milestone tidak ditemukan) (contracts/FreelanceEscrow.sol#486)
+FreelanceEscrow.getMilestone(uint256,uint256) (contracts/FreelanceEscrow.sol#501-509) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(milestoneId < milestones[orderId].length,Milestone tidak ditemukan) (contracts/FreelanceEscrow.sol#507)
+FreelanceEscrow._lateFeeAt(uint256,FreelanceEscrow.Milestone,uint256) (contracts/FreelanceEscrow.sol#535-542) uses timestamp for comparisons
+	Dangerous comparisons:
+	- t <= m.deadline (contracts/FreelanceEscrow.sol#536)
+	- pct > o.capBps (contracts/FreelanceEscrow.sol#540)
+FreelanceEscrow._advance(uint256,uint256) (contracts/FreelanceEscrow.sol#586-593) uses timestamp for comparisons
+	Dangerous comparisons:
+	- milestoneId + 1 < milestones[orderId].length (contracts/FreelanceEscrow.sol#587)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#block-timestamp
+INFO:Detectors:
+Detector: low-level-calls
+Low level call in FreelanceEscrow._send(address,uint256) (contracts/FreelanceEscrow.sol#595-599):
+	- (ok,None) = address(to).call{value: amount}() (contracts/FreelanceEscrow.sol#597)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#low-level-calls
+INFO:Detectors:
+Detector: naming-convention
+Variable FreelanceEscrow.DAY_LENGTH (contracts/FreelanceEscrow.sol#83) is not in mixedCase
+Variable FreelanceEscrow.REVIEW_PERIOD (contracts/FreelanceEscrow.sol#85) is not in mixedCase
+Variable FreelanceEscrow.REVISION_WINDOW (contracts/FreelanceEscrow.sol#87) is not in mixedCase
+Variable FreelanceEscrow.DISPUTE_TIMEOUT (contracts/FreelanceEscrow.sol#89) is not in mixedCase
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#conformance-to-solidity-naming-conventions
+INFO:Slither:. analyzed (5 contracts with 102 detectors), 17 result(s) found
+
+=====================================================================
+KELUARAN LENGKAP - SESUDAH PERBAIKAN
+=====================================================================
+INFO:Detectors:
+Detector: timestamp
+FreelanceEscrow.submitWork(uint256,uint256,string) (contracts/FreelanceEscrow.sol#296-319) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(m.status == MilestoneStatus.Pending || m.status == MilestoneStatus.RevisionRequested,Milestone tidak menunggu kiriman) (contracts/FreelanceEscrow.sol#303-306)
+FreelanceEscrow.requestRevision(uint256,uint256,string) (contracts/FreelanceEscrow.sol#334-349) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(m.status == MilestoneStatus.Submitted,Milestone belum dikirim) (contracts/FreelanceEscrow.sol#341)
+	- require(bool,string)(m.revisionCount < o.maxRevisions,Batas revisi tercapai) (contracts/FreelanceEscrow.sol#342)
+FreelanceEscrow.rejectMilestone(uint256,uint256,string) (contracts/FreelanceEscrow.sol#355-376) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(block.timestamp > uint256(m.revisionRequestedAt) + REVISION_WINDOW,Jendela revisi belum habis) (contracts/FreelanceEscrow.sol#363-366)
+	- require(bool,string)(m.status == MilestoneStatus.Submitted,Milestone belum dikirim) (contracts/FreelanceEscrow.sol#368)
+FreelanceEscrow.finalizeAfterReview(uint256,uint256) (contracts/FreelanceEscrow.sol#379-389) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(block.timestamp > uint256(m.lastSubmittedAt) + REVIEW_PERIOD,Masa review belum berakhir) (contracts/FreelanceEscrow.sol#387)
+FreelanceEscrow.claimRefund(uint256) (contracts/FreelanceEscrow.sol#395-415) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(m.status == MilestoneStatus.Pending,Hasil kerja sudah dikirim) (contracts/FreelanceEscrow.sol#400)
+	- require(bool,string)(block.timestamp > uint256(m.deadline) + o.gracePeriod,Belum melewati tenggat + batas akhir) (contracts/FreelanceEscrow.sol#401)
+FreelanceEscrow.resolveDispute(uint256,uint256,uint256,string) (contracts/FreelanceEscrow.sol#446-460) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(block.timestamp <= uint256(m.disputeStartedAt) + DISPUTE_TIMEOUT,Tenggat arbiter sudah lewat) (contracts/FreelanceEscrow.sol#454)
+FreelanceEscrow.settleDisputeTimeout(uint256,uint256) (contracts/FreelanceEscrow.sol#463-471) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(block.timestamp > uint256(m.disputeStartedAt) + DISPUTE_TIMEOUT,Tenggat arbiter belum lewat) (contracts/FreelanceEscrow.sol#468)
+FreelanceEscrow.calculateLateFee(uint256,uint256) (contracts/FreelanceEscrow.sol#481-492) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(milestoneId < milestones[orderId].length,Milestone tidak ditemukan) (contracts/FreelanceEscrow.sol#487)
+FreelanceEscrow.getMilestone(uint256,uint256) (contracts/FreelanceEscrow.sol#502-510) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(milestoneId < milestones[orderId].length,Milestone tidak ditemukan) (contracts/FreelanceEscrow.sol#508)
+FreelanceEscrow._lateFeeAt(uint256,FreelanceEscrow.Milestone,uint256) (contracts/FreelanceEscrow.sol#536-544) uses timestamp for comparisons
+	Dangerous comparisons:
+	- t <= m.deadline (contracts/FreelanceEscrow.sol#537)
+	- pct > o.capBps (contracts/FreelanceEscrow.sol#542)
+FreelanceEscrow._advance(uint256,uint256) (contracts/FreelanceEscrow.sol#588-595) uses timestamp for comparisons
+	Dangerous comparisons:
+	- milestoneId + 1 < milestones[orderId].length (contracts/FreelanceEscrow.sol#589)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#block-timestamp
+INFO:Detectors:
+Detector: low-level-calls
+Low level call in FreelanceEscrow._send(address,uint256) (contracts/FreelanceEscrow.sol#597-601):
+	- (ok,None) = address(to).call{value: amount}() (contracts/FreelanceEscrow.sol#599)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#low-level-calls
+INFO:Detectors:
+Detector: naming-convention
+Variable FreelanceEscrow.DAY_LENGTH (contracts/FreelanceEscrow.sol#84) is not in mixedCase
+Variable FreelanceEscrow.REVIEW_PERIOD (contracts/FreelanceEscrow.sol#86) is not in mixedCase
+Variable FreelanceEscrow.REVISION_WINDOW (contracts/FreelanceEscrow.sol#88) is not in mixedCase
+Variable FreelanceEscrow.DISPUTE_TIMEOUT (contracts/FreelanceEscrow.sol#90) is not in mixedCase
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#conformance-to-solidity-naming-conventions
+INFO:Slither:. analyzed (8 contracts with 102 detectors), 16 result(s) found
+
+=====================================================================
+HUMAN SUMMARY (sesudah perbaikan)
+=====================================================================
+INFO:Printers:
+Compiled with Builder
+Total number of contracts in source files: 1
+Number of contracts in dependencies: 5
+Number of contracts in tests       : 2
+Source lines of code (SLOC) in source files: 422
+Source lines of code (SLOC) in dependencies: 879
+Source lines of code (SLOC) in tests       : 37
+Number of  assembly lines: 0
+Number of optimization issues: 0
+Number of informational issues: 5
+Number of low issues: 11
+Number of medium issues: 0
+Number of high issues: 0
+
+
++-----------------+-------------+------+------------+--------------+-------------+
+| Name            | # functions | ERCS | ERC20 info | Complex code | Features    |
++-----------------+-------------+------+------------+--------------+-------------+
+| FreelanceEscrow | 34          |      |            | No           | Receive ETH |
+|                 |             |      |            |              | Send ETH    |
++-----------------+-------------+------+------------+--------------+-------------+
+INFO:Slither:. analyzed (8 contracts)
