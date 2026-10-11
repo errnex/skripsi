@@ -4,6 +4,10 @@ import { ORDER_STATUS, MS_STATUS } from "./format";
 
 /** Provider khusus BACA data (tidak butuh MetaMask). */
 export const readProvider = new JsonRpcProvider(NETWORK.rpcUrl, NETWORK.chainId, { staticNetwork: true });
+// Provider terpisah untuk riwayat event; batchMaxCount 1 agar tidak terkena rate limit batch.
+const logsProvider = NETWORK.logsRpcUrl
+  ? new JsonRpcProvider(NETWORK.logsRpcUrl, NETWORK.chainId, { staticNetwork: true, batchMaxCount: 1 })
+  : null;
 export const readContract = new Contract(CONTRACT_ADDRESS, ABI, readProvider);
 
 /** Kontrak untuk MENULIS (transaksi), ditandatangani lewat MetaMask. */
@@ -92,6 +96,7 @@ async function logProviders() {
       /* abaikan */
     }
   }
+  if (logsProvider) list.push(logsProvider);
   list.push(readProvider);
   return list;
 }

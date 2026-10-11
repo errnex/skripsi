@@ -14,6 +14,9 @@ const NETWORKS = {
     chainId: 11155111,
     chainIdHex: "0xaa36a7",
     rpcUrl: import.meta.env.VITE_SEPOLIA_RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com",
+    // RPC khusus membaca riwayat event (eth_getLogs) dari blok deploy. publicnode memangkas riwayat lama,
+    // Alchemy gratis hanya 10 blok per permintaan; gateway publik Tenderly menyimpan riwayat lengkap.
+    logsRpcUrl: import.meta.env.VITE_SEPOLIA_LOGS_RPC_URL || "https://sepolia.gateway.tenderly.co",
     explorer: "https://sepolia.etherscan.io",
     currency: { name: "Sepolia Ether", symbol: "ETH", decimals: 18 },
   },
@@ -23,6 +26,7 @@ const NETWORKS = {
     chainId: 31337,
     chainIdHex: "0x7a69",
     rpcUrl: "http://127.0.0.1:8545",
+    logsRpcUrl: null,
     explorer: null,
     currency: { name: "Ether", symbol: "ETH", decimals: 18 },
   },
